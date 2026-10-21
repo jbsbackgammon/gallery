@@ -25,7 +25,6 @@ button, select { font: inherit; }
   background: #fff;
   border-bottom: 1px solid #e5e5e5;
 }
-h1 { margin: 0; font-size: 17px; font-weight: 700; white-space: nowrap; letter-spacing: .01em; }
 .folder-control { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; gap: 12px; }
 #folderSelect {
   width: min(340px, 100%);
@@ -97,7 +96,6 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; white-space: nowrap; letter-s
 @media (max-width: 1023px) { .gallery { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 767px) {
   .toolbar { gap: 10px; min-height: 57px; padding: 8px 10px; }
-  h1 { font-size: 14px; }
   .folder-control { gap: 7px; }
   #folderSelect { flex: 1; min-width: 0; width: 100%; height: 38px; font-size: 13px; padding-left: 9px; }
   .item-count { font-size: 11px; }
