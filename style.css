@@ -68,6 +68,45 @@ button, select { font: inherit; }
   object-fit: cover;
   object-position: center top;
 }
+/* JSON has no thumbnail: keep the same 16:9 tile with a clear file label. */
+.tile--json {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px;
+  background: #f3f4f6;
+  color: #30343a;
+  text-align: center;
+  transition: background-color .12s ease;
+}
+.json-badge {
+  display: inline-block;
+  padding: 5px 13px;
+  border: 1px solid #a7acb5;
+  border-radius: 4px;
+  background: #fff;
+  color: #444e5b;
+  font-size: clamp(12px, 1.25vw, 19px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: .06em;
+}
+.json-name {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 11px;
+  line-height: 1.45;
+}
+@media (hover: hover) {
+  .tile--json:hover { background: #e9edf3; }
+}
 .tile-name {
   pointer-events: none;
   position: absolute;
@@ -105,4 +144,4 @@ button, select { font: inherit; }
   .item-count { font-size: 11px; }
   .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; padding: 3px; }
 }
-@media (prefers-reduced-motion: reduce) { .tile-name { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .tile-name, .tile--json { transition: none; } }

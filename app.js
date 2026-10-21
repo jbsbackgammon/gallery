@@ -16,7 +16,7 @@
   }
 
   // Encode each path segment individually. Japanese, spaces, #, %, etc. must work.
-  function imageUrl(relativePath) {
+  function fileUrl(relativePath) {
     return relativePath.split('/').map(encodeURIComponent).join('/');
   }
 
@@ -36,8 +36,8 @@
   }
 
   // "保管日順" means latest Git addition first, not the local file modification date.
-  function sortedImages(images) {
-    return [...images].sort((a, b) => {
+  function sortedFiles(files) {
+    return [...files].sort((a, b) => {
       if (sortSelect.value === 'date') {
         const aDate = typeof a.uploadedAt === 'number' ? a.uploadedAt : -1;
         const bDate = typeof b.uploadedAt === 'number' ? b.uploadedAt : -1;
@@ -53,43 +53,59 @@
 
     if (!folder) {
       itemCount.textContent = '';
-      setNotice('素材フォルダがありません。リポジトリ直下にフォルダを作り、画像を追加してください。');
+      setNotice('素材フォルダがありません。リポジトリ直下にフォルダを作り、画像やJSONを追加してください。');
       return;
     }
 
-    const images = Array.isArray(folder.images) ? sortedImages(folder.images) : [];
-    itemCount.textContent = `${images.length}点`;
+    // Keep compatibility with the earlier v2 gallery.json manifest.
+    const files = Array.isArray(folder.files) ? folder.files : (Array.isArray(folder.images) ? folder.images : []);
+    const sorted = sortedFiles(files);
+    itemCount.textContent = `${sorted.length}点`;
 
-    if (images.length === 0) {
-      setNotice('このフォルダには表示できる画像がありません。');
+    if (sorted.length === 0) {
+      setNotice('このフォルダには表示できる素材がありません。');
       return;
     }
     setNotice('');
 
     const fragment = document.createDocumentFragment();
-    images.forEach((item, index) => {
+    sorted.forEach((item, index) => {
       if (typeof item.path !== 'string' || typeof item.name !== 'string') return;
+      const isJson = item.type === 'json' || (typeof item.path === 'string' && /\.json$/i.test(item.path));
       const tile = document.createElement('a');
-      const image = document.createElement('img');
-      const filename = document.createElement('span');
-      const url = imageUrl(item.path);
+      const url = fileUrl(item.path);
 
-      tile.className = 'tile';
+      tile.className = isJson ? 'tile tile--json' : 'tile';
       tile.href = url;
       tile.download = item.name;
       tile.setAttribute('aria-label', `${item.name}をダウンロード`);
       tile.title = item.name;
 
-      image.src = url;
-      image.alt = '';
-      image.loading = index < 10 ? 'eager' : 'lazy';
-      image.decoding = 'async';
-      image.draggable = false;
+      if (isJson) {
+        const label = document.createElement('span');
+        label.className = 'json-badge';
+        label.textContent = 'JSON';
+        label.setAttribute('aria-hidden', 'true');
 
-      filename.className = 'tile-name';
-      filename.textContent = item.name;
-      filename.setAttribute('aria-hidden', 'true');
-      tile.append(image, filename);
+        const filename = document.createElement('span');
+        filename.className = 'json-name';
+        filename.textContent = item.name;
+        filename.setAttribute('aria-hidden', 'true');
+        tile.append(label, filename);
+      } else {
+        const image = document.createElement('img');
+        const filename = document.createElement('span');
+        image.src = url;
+        image.alt = '';
+        image.loading = index < 10 ? 'eager' : 'lazy';
+        image.decoding = 'async';
+        image.draggable = false;
+
+        filename.className = 'tile-name';
+        filename.textContent = item.name;
+        filename.setAttribute('aria-hidden', 'true');
+        tile.append(image, filename);
+      }
       fragment.append(tile);
     });
     gallery.append(fragment);

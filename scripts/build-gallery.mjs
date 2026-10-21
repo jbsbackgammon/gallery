@@ -4,13 +4,15 @@ import { basename, join, relative, sep } from 'node:path';
 
 const root = process.cwd();
 const output = join(root, 'dist');
-const allowedExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.avif', '.bmp', '.apng']);
+const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.avif', '.bmp', '.apng']);
+const allowedExtensions = new Set([...imageExtensions, '.json']);
 const excludedFolders = new Set(['.github', 'scripts', 'dist', 'node_modules', '.git', '.vscode']);
 const collator = new Intl.Collator('ja', { numeric: true, sensitivity: 'base' });
 const sortNames = (a, b) => collator.compare(a.name, b.name);
 const toWebPath = (path) => path.split(sep).join('/');
 const isHidden = (name) => name.startsWith('.');
-const isImage = (name) => allowedExtensions.has(name.slice(name.lastIndexOf('.')).toLowerCase());
+const getExtension = (name) => name.slice(name.lastIndexOf('.')).toLowerCase();
+const isSupported = (name) => allowedExtensions.has(getExtension(name));
 
 async function walk(directory) {
   const found = [];
@@ -19,14 +21,14 @@ async function walk(directory) {
     if (isHidden(entry.name) || entry.isSymbolicLink()) continue;
     const path = join(directory, entry.name);
     if (entry.isDirectory()) found.push(...await walk(path));
-    else if (entry.isFile() && isImage(entry.name)) found.push(path);
+    else if (entry.isFile() && isSupported(entry.name)) found.push(path);
   }
   return found;
 }
 
 // GitHub Actions checks out the complete history, so a file's last "added"
 // commit is a reproducible storage date (unlike checkout/FS modification time).
-// If an image was deleted and uploaded again, the newer addition is used.
+// If a file was deleted and uploaded again, the newer addition is used.
 function readUploadDates(folderNames) {
   const dates = new Map();
   if (!folderNames.length) return dates;
@@ -71,11 +73,11 @@ async function main() {
     .sort(sortNames);
   const uploadDates = readUploadDates(topLevel.map((entry) => entry.name));
   const folders = [];
-  let totalImages = 0;
+  let totalFiles = 0;
 
   for (const entry of topLevel) {
     const folderPath = join(root, entry.name);
-    const images = [];
+    const files = [];
     for (const file of await walk(folderPath)) {
       const rel = relative(root, file);
       const copyDest = join(output, rel);
@@ -83,18 +85,19 @@ async function main() {
       await copyFile(file, copyDest);
       const info = await stat(file);
       const webPath = toWebPath(rel);
-      images.push({
+      files.push({
         path: webPath,
         name: basename(file),
+        type: getExtension(file) === '.json' ? 'json' : 'image',
         size: info.size,
         uploadedAt: uploadDates.get(webPath) ?? null,
       });
     }
-    folders.push({ id: entry.name, name: entry.name, images });
-    totalImages += images.length;
+    folders.push({ id: entry.name, name: entry.name, files });
+    totalFiles += files.length;
   }
-  await writeFile(join(output, 'gallery.json'), JSON.stringify({ version: 2, folders }, null, 2) + '\n');
-  console.log(`Gallery build complete: ${folders.length} folders, ${totalImages} images`);
+  await writeFile(join(output, 'gallery.json'), JSON.stringify({ version: 3, folders }, null, 2) + '\n');
+  console.log(`Gallery build complete: ${folders.length} folders, ${totalFiles} files`);
 }
 
 main().catch((error) => {
