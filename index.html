@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="noindex,nofollow">
+  <title>素材ギャラリー</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="toolbar">
+    <h1>素材ギャラリー</h1>
+    <div class="folder-control">
+      <label class="visually-hidden" for="folderSelect">素材フォルダ</label>
+      <select id="folderSelect" aria-label="素材フォルダ" disabled>
+        <option>読み込み中…</option>
+      </select>
+      <span id="itemCount" class="item-count" aria-live="polite"></span>
+    </div>
+  </header>
+  <main id="main" aria-busy="true">
+    <div id="notice" class="notice" role="status">素材を読み込み中…</div>
+    <div id="gallery" class="gallery" aria-label="素材一覧"></div>
+  </main>
+  <noscript><p class="notice">このページを利用するにはJavaScriptを有効にしてください。</p></noscript>
+</body>
+</html>
