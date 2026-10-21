@@ -26,8 +26,7 @@ button, select { font: inherit; }
   border-bottom: 1px solid #e5e5e5;
 }
 .folder-control { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; gap: 12px; }
-#folderSelect {
-  width: min(340px, 100%);
+#folderSelect, #sortSelect {
   height: 40px;
   padding: 0 32px 0 12px;
   border: 1px solid #ccc;
@@ -38,8 +37,11 @@ button, select { font: inherit; }
   cursor: pointer;
   text-overflow: ellipsis;
 }
+#folderSelect { width: min(340px, 100%); }
+.sort-control { flex: 0 0 auto; }
+#sortSelect { width: 136px; }
 #folderSelect:disabled { color: #777; cursor: default; }
-#folderSelect:focus-visible, .tile:focus-visible { outline: 3px solid #2768db; outline-offset: -3px; }
+#folderSelect:focus-visible, #sortSelect:focus-visible, .tile:focus-visible { outline: 3px solid #2768db; outline-offset: -3px; }
 .item-count { color: #666; white-space: nowrap; font-size: 12px; font-variant-numeric: tabular-nums; }
 .gallery {
   display: grid;
@@ -70,14 +72,15 @@ button, select { font: inherit; }
   pointer-events: none;
   position: absolute;
   right: 0; bottom: 0; left: 0;
-  padding: 19px 9px 7px;
-  background: linear-gradient(transparent, rgba(0,0,0,.8));
+  padding: 20px 9px 8px;
+  max-height: 100%;
+  background: linear-gradient(transparent, rgba(0,0,0,.85));
   opacity: 0;
   font-size: 11px;
   line-height: 1.4;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   overflow: hidden;
-  text-overflow: ellipsis;
   transition: opacity .12s ease;
 }
 @media (hover: hover) {
@@ -98,6 +101,7 @@ button, select { font: inherit; }
   .toolbar { gap: 10px; min-height: 57px; padding: 8px 10px; }
   .folder-control { gap: 7px; }
   #folderSelect { flex: 1; min-width: 0; width: 100%; height: 38px; font-size: 13px; padding-left: 9px; }
+  #sortSelect { width: 116px; height: 38px; font-size: 12px; padding-left: 8px; padding-right: 24px; }
   .item-count { font-size: 11px; }
   .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; padding: 3px; }
 }

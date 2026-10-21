@@ -2,6 +2,8 @@
   'use strict';
 
   const folderSelect = document.getElementById('folderSelect');
+  const sortSelect = document.getElementById('sortSelect');
+  const collator = new Intl.Collator('ja', { numeric: true, sensitivity: 'base' });
   const itemCount = document.getElementById('itemCount');
   const gallery = document.getElementById('gallery');
   const notice = document.getElementById('notice');
@@ -29,6 +31,22 @@
     window.history.replaceState(null, '', url);
   }
 
+  function compareByName(a, b) {
+    return collator.compare(a.name, b.name) || collator.compare(a.path, b.path);
+  }
+
+  // "保管日順" means latest Git addition first, not the local file modification date.
+  function sortedImages(images) {
+    return [...images].sort((a, b) => {
+      if (sortSelect.value === 'date') {
+        const aDate = typeof a.uploadedAt === 'number' ? a.uploadedAt : -1;
+        const bDate = typeof b.uploadedAt === 'number' ? b.uploadedAt : -1;
+        if (aDate !== bDate) return bDate - aDate;
+      }
+      return compareByName(a, b);
+    });
+  }
+
   function renderFolder(folderId) {
     const folder = folders.find((entry) => entry.id === folderId);
     gallery.replaceChildren();
@@ -39,7 +57,7 @@
       return;
     }
 
-    const images = Array.isArray(folder.images) ? folder.images : [];
+    const images = Array.isArray(folder.images) ? sortedImages(folder.images) : [];
     itemCount.textContent = `${images.length}点`;
 
     if (images.length === 0) {
@@ -60,7 +78,7 @@
       tile.href = url;
       tile.download = item.name;
       tile.setAttribute('aria-label', `${item.name}をダウンロード`);
-      tile.title = `${item.name} をダウンロード`;
+      tile.title = item.name;
 
       image.src = url;
       image.alt = '';
@@ -84,6 +102,13 @@
   }
 
   folderSelect.addEventListener('change', () => chooseFolder(folderSelect.value));
+  sortSelect.addEventListener('change', () => {
+    const url = new URL(window.location.href);
+    if (sortSelect.value === 'name') url.searchParams.set('sort', 'name');
+    else url.searchParams.delete('sort');
+    window.history.replaceState(null, '', url);
+    renderFolder(folderSelect.value);
+  });
 
   async function load() {
     try {
@@ -109,6 +134,7 @@
       }
 
       folderSelect.disabled = false;
+      sortSelect.value = new URL(window.location.href).searchParams.get('sort') === 'name' ? 'name' : 'date';
       const requested = readSelectedFolderFromUrl();
       const initialFolder = folders.some((folder) => folder.id === requested) ? requested : folders[0].id;
       chooseFolder(initialFolder);

@@ -1,4 +1,5 @@
 import { copyFile, mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { basename, join, relative, sep } from 'node:path';
 
 const root = process.cwd();
@@ -23,6 +24,40 @@ async function walk(directory) {
   return found;
 }
 
+// GitHub Actions checks out the complete history, so a file's last "added"
+// commit is a reproducible storage date (unlike checkout/FS modification time).
+// If an image was deleted and uploaded again, the newer addition is used.
+function readUploadDates(folderNames) {
+  const dates = new Map();
+  if (!folderNames.length) return dates;
+  try {
+    const log = execFileSync('git', [
+      'log', '--no-renames', '--diff-filter=A', '--name-only', '-z',
+      '--format=GALLERY_COMMIT:%ct', '--', ...folderNames,
+    ], { cwd: root, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+
+    // With -z, commit headers and file paths are NUL-separated. The first
+    // path after each header has one leading line break. Paths are not quoted.
+    let commitTime = null;
+    let firstPath = false;
+    for (const record of log.split('\0')) {
+      if (!record) continue;
+      if (record.startsWith('GALLERY_COMMIT:')) {
+        const value = Number(record.slice('GALLERY_COMMIT:'.length));
+        commitTime = Number.isFinite(value) ? value : null;
+        firstPath = true;
+        continue;
+      }
+      const path = firstPath && record.startsWith('\n') ? record.slice(1) : record;
+      firstPath = false;
+      if (path && !dates.has(path)) dates.set(path, commitTime);
+    }
+  } catch (error) {
+    console.warn('Git history is unavailable; storage date sorting will fall back to file name.', error.message);
+  }
+  return dates;
+}
+
 async function main() {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
@@ -34,6 +69,7 @@ async function main() {
   const topLevel = (await readdir(root, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory() && !excludedFolders.has(entry.name) && !isHidden(entry.name))
     .sort(sortNames);
+  const uploadDates = readUploadDates(topLevel.map((entry) => entry.name));
   const folders = [];
   let totalImages = 0;
 
@@ -46,12 +82,18 @@ async function main() {
       await mkdir(join(copyDest, '..'), { recursive: true });
       await copyFile(file, copyDest);
       const info = await stat(file);
-      images.push({ path: toWebPath(rel), name: basename(file), size: info.size });
+      const webPath = toWebPath(rel);
+      images.push({
+        path: webPath,
+        name: basename(file),
+        size: info.size,
+        uploadedAt: uploadDates.get(webPath) ?? null,
+      });
     }
     folders.push({ id: entry.name, name: entry.name, images });
     totalImages += images.length;
   }
-  await writeFile(join(output, 'gallery.json'), JSON.stringify({ version: 1, folders }, null, 2) + '\n');
+  await writeFile(join(output, 'gallery.json'), JSON.stringify({ version: 2, folders }, null, 2) + '\n');
   console.log(`Gallery build complete: ${folders.length} folders, ${totalImages} images`);
 }
 
