@@ -100,12 +100,28 @@
     renderFolder(folderSelect.value);
   });
 
+  async function fetchGalleryData() {
+    // GitHub Pages の更新直後など、旧アセットが混在した場合の一時的な不整合を避ける。
+    // cache: no-store に加え、1回目の取得が失敗した場合だけ別URLで再取得する。
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const url = attempt === 0 ? './gallery.json' : `./gallery.json?v=6-${Date.now()}`;
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (!data || !Array.isArray(data.folders)) throw new Error('gallery.json の形式が正しくありません');
+        return data;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
+  }
+
   async function load() {
     try {
-      const response = await fetch('./gallery.json', { cache: 'no-store' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (!Array.isArray(data.folders)) throw new Error('Invalid gallery data');
+      const data = await fetchGalleryData();
       folders = data.folders.filter((item) => item && typeof item.id === 'string' && typeof item.name === 'string');
 
       folderSelect.replaceChildren();
@@ -132,7 +148,9 @@
       console.error('Gallery loading failed:', error);
       folderSelect.replaceChildren(new Option('読み込みに失敗しました', ''));
       folderSelect.disabled = true;
-      setNotice('素材一覧を読み込めませんでした。ページを再読み込みしてください。');
+      // 原因を区別して、デプロイやPages設定の不備を調べられるようにする。
+      const reason = error instanceof Error ? error.message : String(error);
+      setNotice(`素材一覧を読み込めませんでした（${reason}）。GitHub Actions の Deploy Gallery が成功しているかと、Settings → Pages → Source が GitHub Actions になっているか確認してください。`);
     } finally {
       main.setAttribute('aria-busy', 'false');
     }

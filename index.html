@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex,nofollow">
   <title>素材保管庫</title>
-  <link rel="stylesheet" href="./style.css">
-  <script src="./app.js" defer></script>
+  <link rel="stylesheet" href="./style.css?v=6">
+  <script src="./app.js?v=6" defer></script>
 </head>
 <body>
   <header class="toolbar">
@@ -17,6 +17,8 @@
       <select id="folderSelect" aria-label="素材フォルダ" disabled>
         <option>読み込み中…</option>
       </select>
+      <!-- 旧版 JavaScript のキャッシュが残っていても例外にならないよう互換性を維持 -->
+      <span id="itemCount" hidden aria-hidden="true"></span>
     </div>
     <div class="sort-control">
       <label class="visually-hidden" for="sortSelect">並び順</label>
