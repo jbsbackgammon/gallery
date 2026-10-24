@@ -17,7 +17,6 @@
       <select id="folderSelect" aria-label="素材フォルダ" disabled>
         <option>読み込み中…</option>
       </select>
-      <span id="itemCount" class="item-count" aria-live="polite"></span>
     </div>
     <div class="sort-control">
       <label class="visually-hidden" for="sortSelect">並び順</label>
@@ -29,7 +28,7 @@
   </header>
   <main id="main" aria-busy="true">
     <div id="notice" class="notice" role="status">素材を読み込み中…</div>
-    <div id="gallery" class="gallery" aria-label="素材一覧"></div>
+    <ul id="gallery" class="file-list" aria-label="素材一覧"></ul>
   </main>
   <noscript><p class="notice">このページを利用するにはJavaScriptを有効にしてください。</p></noscript>
 </body>
